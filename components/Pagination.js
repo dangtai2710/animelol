@@ -1,68 +1,102 @@
 import Link from 'next/link';
 
-export default function Pagination({ currentPage, totalPages, basePath = '/' }) {
-    if (totalPages <= 1) {
-        return null;
-    }
+export default function Pagination({ currentPage, totalPages, basePath }) {
+    if (totalPages <= 1) return null;
 
-    const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+    // Logic để tính toán xem hiển thị những số trang nào
+    const getPageNumbers = () => {
+        const pages = [];
+        const range = 2; // Số trang hiển thị ở mỗi bên của trang hiện tại
+
+        for (let i = 1; i <= totalPages; i++) {
+            if (
+                i === 1 || // Luôn hiện trang đầu
+                i === totalPages || // Luôn hiện trang cuối
+                (i >= currentPage - range && i <= currentPage + range) // Hiện các trang xung quanh trang hiện tại
+            ) {
+                pages.push(i);
+            } else if (pages[pages.length - 1] !== '...') {
+                pages.push('...'); // Thêm dấu ba chấm nếu có khoảng cách
+            }
+        }
+        return pages;
+    };
 
     return (
-        <div className="pagination">
-            {/* Nút Trang Trước */}
+        <div className="pagination-container">
+            {/* Nút TRƯỚC */}
             {currentPage > 1 && (
-                // THÊM legacyBehavior VÀO ĐÂY
                 <Link href={`${basePath}?page=${currentPage - 1}`} legacyBehavior>
-                    <a className="page-link">‹ Trước</a>
+                    <a className="page-btn">‹ Trước</a>
                 </Link>
             )}
 
-            {/* Các nút số trang */}
-            {pages.map(page => (
-                // THÊM legacyBehavior VÀO ĐÂY
-                <Link key={page} href={`${basePath}?page=${page}`} legacyBehavior>
-                    <a className={page === currentPage ? 'page-link active' : 'page-link'}>
-                        {page}
-                    </a>
-                </Link>
-            ))}
+            {/* CÁC SỐ TRANG */}
+            <div className="page-numbers">
+                {getPageNumbers().map((page, index) => (
+                    page === '...' ? (
+                        <span key={`dots-${index}`} className="dots">...</span>
+                    ) : (
+                        <Link key={page} href={`${basePath}?page=${page}`} legacyBehavior>
+                            <a className={`page-btn ${page === currentPage ? 'active' : ''}`}>
+                                {page}
+                            </a>
+                        </Link>
+                    )
+                ))}
+            </div>
 
-            {/* Nút Trang Sau */}
+            {/* Nút SAU */}
             {currentPage < totalPages && (
-                // THÊM legacyBehavior VÀO ĐÂY
                 <Link href={`${basePath}?page=${currentPage + 1}`} legacyBehavior>
-                    <a className="page-link">Sau ›</a>
+                    <a className="page-btn">Sau ›</a>
                 </Link>
             )}
 
             <style jsx>{`
-                .pagination {
-                    margin-top: 3rem;
+                .pagination-container {
                     display: flex;
                     justify-content: center;
                     align-items: center;
-                    flex-wrap: wrap;
+                    margin: 4rem 0;
+                    gap: 10px;
+                }
+                .page-numbers {
+                    display: flex;
+                    align-items: center;
                     gap: 8px;
                 }
-                .page-link {
-                    display: block;
-                    padding: 8px 14px;
-                    border: 1px solid #ccc;
-                    border-radius: 4px;
+                .page-btn {
+                    padding: 8px 16px;
+                    background-color: #222; /* Màu đen nhạt */
+                    color: #fff;
                     text-decoration: none;
-                    color: #333;
-                    transition: background-color 0.2s, border-color 0.2s;
-                }
-                .page-link:hover {
-                    background-color: #f0f0f0;
-                    border-color: #999;
-                }
-                .page-link.active {
-                    background-color: #0070f3;
-                    color: white;
-                    border-color: #0070f3;
+                    border-radius: 4px;
                     font-weight: bold;
-                    pointer-events: none;
+                    font-size: 0.9rem;
+                    transition: all 0.2s ease;
+                    border: 1px solid transparent;
+                }
+                .page-btn:hover {
+                    background-color: #333;
+                    border-color: #666;
+                }
+                .page-btn.active {
+                    background-color: #e50914; /* MÀU ĐỎ NETFLIX */
+                    color: white;
+                    pointer-events: none; /* Không cho bấm vào trang hiện tại */
+                }
+                .dots {
+                    color: #666;
+                    padding: 0 5px;
+                }
+
+                /* Responsive cho mobile */
+                @media (max-width: 600px) {
+                    .page-btn {
+                        padding: 6px 12px;
+                        font-size: 0.8rem;
+                    }
                 }
             `}</style>
         </div>

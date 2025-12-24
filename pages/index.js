@@ -1,15 +1,18 @@
 import Head from 'next/head';
-import { getLatestMovies, getMoviesByGenre, getMoviesByCountry } from '../lib/api';
+import { getMenuData, getLatestMovies, getMoviesByGenre, getMoviesByCountry, getSettings } from '../lib/api';
 import Header from '../components/Header';
 import HeroSection from '../components/HeroSection';
-import MovieSlider from '../components/MovieSlider'; // << DÒNG IMPORT BỊ THIẾU LÀ ĐÂY
+import MovieSlider from '../components/MovieSlider';
+import Footer from '../components/Footer'; // << NHỚ IMPORT FOOTER
 
 export default function NetflixPage({ 
     latestMovies, 
     actionMovies, 
     koreanMovies, 
     comedyMovies, 
-    vietnamMovies 
+    vietnamMovies,
+    menuData,
+    settings // << NHẬN DỮ LIỆU SETTINGS
 }) {
     const heroMovie = latestMovies?.[0];
 
@@ -17,15 +20,17 @@ export default function NetflixPage({
         <div className="netflix-container">
             <Head>
                 <title>AnimeLOL - Giao diện Netflix</title>
-                <link rel="icon" href="/favicon.ico" />
+                {/* Favicon sẽ tự động đổi theo cài đặt trong _app.js, nhưng ta cũng để ở đây cho chắc */}
+                <link rel="icon" href={settings?.favicon_url || "/favicon.ico"} />
             </Head>
 
-            <Header />
+            {/* Truyền cả menuData và settings cho Header */}
+            <Header menuData={menuData} settings={settings} />
 
             <main>
                 <HeroSection movie={heroMovie} />
                 
-                <div className="movie-rows-container">
+                <div className="sliders-container">
                     <MovieSlider title="Mới Cập Nhật" movies={latestMovies} />
                     <MovieSlider title="Phim Hành Động" movies={actionMovies} />
                     <MovieSlider title="Phim Hàn Quốc" movies={koreanMovies} />
@@ -34,11 +39,14 @@ export default function NetflixPage({
                 </div>
             </main>
 
+            {/* THÊM FOOTER VÀO CUỐI TRANG */}
+            <Footer settings={settings} />
+
             <style jsx global>{`
-                body { background-color: #141414; color: white; margin: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+                body { background-color: #141414; color: white; margin: 0; font-family: 'Roboto', sans-serif; }
             `}</style>
             <style jsx>{`
-                .movie-rows-container {
+                .sliders-container {
                     margin-top: -10vh;
                     position: relative;
                     z-index: 10;
@@ -48,25 +56,29 @@ export default function NetflixPage({
     );
 }
 
-// Hàm getServerSideProps không đổi
 export async function getServerSideProps() {
     const ACTION_GENRE_ID = 72;
     const KOREA_COUNTRY_ID = 784;
     const COMEDY_GENRE_ID = 11;
     const VIETNAM_COUNTRY_ID = 4820;
     
+    // Gọi TẤT CẢ các API cùng lúc, bao gồm cả getSettings
     const [
         latestMoviesResult,
         actionMovies,
         koreanMovies,
         comedyMovies,
-        vietnamMovies
+        vietnamMovies,
+        menuData,
+        settings // << THÊM BIẾN NÀY
     ] = await Promise.all([
         getLatestMovies(1),
         getMoviesByGenre(ACTION_GENRE_ID),
         getMoviesByCountry(KOREA_COUNTRY_ID),
         getMoviesByGenre(COMEDY_GENRE_ID),
-        getMoviesByCountry(VIETNAM_COUNTRY_ID)
+        getMoviesByCountry(VIETNAM_COUNTRY_ID),
+        getMenuData(),
+        getSettings() // << GỌI HÀM LẤY CÀI ĐẶT
     ]);
 
     return {
@@ -76,6 +88,8 @@ export async function getServerSideProps() {
             koreanMovies: koreanMovies || [],
             comedyMovies: comedyMovies || [],
             vietnamMovies: vietnamMovies || [],
+            menuData: menuData || { genres: [], regions: [], categories: [] },
+            settings: settings || null // << TRẢ VỀ SETTINGS
         },
     };
 }
